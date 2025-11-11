@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2575.7">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;title&gt;Auto Fight Clip&lt;/title&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>body { font-family: Arial; text-align: center; background: #111; color: #fff; overflow: hidden; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>#arena { position: relative; width: 800px; height: 400px; margin: 50px auto; background: #222; border: 2px solid #fff; transition: transform 0.05s; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.fighter { position: absolute; width: 80px; height: 80px; bottom: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; font-size: 20px; text-shadow: 0 0 5px #000; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.hp-bar { width: 100px; height: 15px; background: #555; margin: 10px auto; border-radius: 5px; overflow: hidden; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.hp-fill { height: 100%; background: #0f0; width: 100%; transition: width 0.5s; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>#attackText { margin-top: 20px; height: 40px; font-weight: bold; font-size: 18px; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.projectile { position: absolute; width: 20px; height: 20px; border-radius: 50%; background: orange; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.ultimate { position: absolute; width: 50px; height: 50px; border-radius: 50%; background: gold; box-shadow: 0 0 30px 10px gold; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.explosion { position: absolute; width: 60px; height: 60px; border-radius: 50%; background: radial-gradient(circle, yellow 0%, red 70%); opacity: 0.8; animation: explode 0.5s forwards; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>@keyframes explode { 0% { transform: scale(0); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>#intro { font-size: 32px; font-weight: bold; margin-top: 100px; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="intro"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="hp-bar"&gt;&lt;div class="hp-fill" id="hp1"&gt;&lt;/div&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="hp-bar"&gt;&lt;div class="hp-fill" id="hp2"&gt;&lt;/div&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="arena"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="fighter" id="fighter1"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="fighter" id="fighter2"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="attackText"&gt;&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const arena=document.getElementById('arena');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const attackText=document.getElementById('attackText');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const fighter1=document.getElementById('fighter1');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const fighter2=document.getElementById('fighter2');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const intro=document.getElementById('intro');</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function usernameColor(name){</p>
+<p class="p1"><span class="Apple-converted-space">            </span>let hash=0; for(let i=0;i&lt;name.length;i++){hash=name.charCodeAt(i)+((hash&lt;&lt;5)-hash);}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>return `hsl(${hash%360},70%,50%)`;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function generateCharacter(username){</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const powers=[</p>
+<p class="p1"><span class="Apple-converted-space">                </span>{name:'🔥 Fire Blast',color:'orange'},</p>
+<p class="p1"><span class="Apple-converted-space">                </span>{name:'⚡ Lightning Strike',color:'yellow'},</p>
+<p class="p1"><span class="Apple-converted-space">                </span>{name:'❄️ Ice Shard',color:'cyan'},</p>
+<p class="p1"><span class="Apple-converted-space">                </span>{name:'🌑 Shadow Slash',color:'purple'},</p>
+<p class="p1"><span class="Apple-converted-space">                </span>{name:'🌍 Earthquake',color:'brown'}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>];</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const power=powers[Math.floor(Math.random()*powers.length)];</p>
+<p class="p1"><span class="Apple-converted-space">            </span>return {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>name:username,</p>
+<p class="p1"><span class="Apple-converted-space">                </span>health:100,</p>
+<p class="p1"><span class="Apple-converted-space">                </span>attack:Math.floor(Math.random()*15)+10,</p>
+<p class="p1"><span class="Apple-converted-space">                </span>power:power,</p>
+<p class="p1"><span class="Apple-converted-space">                </span>ultimate:{name:'ULTIMATE '+power.name,color:'gold',damage:40},</p>
+<p class="p1"><span class="Apple-converted-space">                </span>color:usernameColor(username)</p>
+<p class="p1"><span class="Apple-converted-space">            </span>};</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function updateHP(char1,char2){</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('hp1').style.width=char1.health+'%';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('hp2').style.width=char2.health+'%';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function shootProjectile(attackerElem,defenderElem,color,callback,size=20,ultimate=false){</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const proj=document.createElement('div');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>proj.className=ultimate?'ultimate':'projectile';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>proj.style.background=color;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>proj.style.width=size+'px';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>proj.style.height=size+'px';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const attackerPos=attackerElem.offsetLeft+40;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const defenderPos=defenderElem.offsetLeft+40;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>proj.style.left=attackerPos+'px';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>proj.style.bottom='90px';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>arena.appendChild(proj);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>let pos=attackerPos;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const step=attackerElem.offsetLeft&lt;defenderElem.offsetLeft?15:-15;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const interval=setInterval(()=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">                </span>pos+=step;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>proj.style.left=pos+'px';</p>
+<p class="p1"><span class="Apple-converted-space">                </span>if((step&gt;0 &amp;&amp; pos&gt;=defenderPos)||(step&lt;0 &amp;&amp; pos&lt;=defenderPos)){</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>clearInterval(interval);</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>arena.removeChild(proj);</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>if(ultimate) triggerExplosion(defenderElem);</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>callback();</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>},30);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function triggerExplosion(targetElem){</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const exp=document.createElement('div');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>exp.className='explosion';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>exp.style.left=(targetElem.offsetLeft+20)+'px';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>exp.style.bottom=(targetElem.offsetTop+20)+'px';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>arena.appendChild(exp);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>let shakeCount=0;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const shakeInterval=setInterval(()=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const offset=(shakeCount%2===0?10:-10);</p>
+<p class="p1"><span class="Apple-converted-space">                </span>arena.style.transform=`translate(${offset}px,0)`;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>shakeCount++;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>if(shakeCount&gt;5){clearInterval(shakeInterval);arena.style.transform='translate(0,0)';}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>},50);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>setTimeout(()=&gt;{arena.removeChild(exp);},500);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// AUTO-GENERATED FIGHT</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const names=["ShadowX","BlazeKing","IceQueen","ThunderBolt","DarkLord","FireWolf"];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const char1=generateCharacter(names[Math.floor(Math.random()*names.length)]);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const char2=generateCharacter(names[Math.floor(Math.random()*names.length)]);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let ultimateUsed1=false, ultimateUsed2=false;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>fighter1.style.left='50px';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>fighter2.style.left='670px';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>fighter1.style.backgroundColor=char1.color; fighter1.innerText=char1.name[0];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>fighter2.style.backgroundColor=char2.color; fighter2.innerText=char2.name[0];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>char1.health=100; char2.health=100;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>updateHP(char1,char2);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Display intro usernames for 3 seconds</p>
+<p class="p1"><span class="Apple-converted-space">        </span>intro.innerHTML=`${char1.name} VS ${char2.name}`;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setTimeout(()=&gt;{intro.innerText=''; startFight();},3000);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function startFight(){</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const startTime=Date.now();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>let turn=0;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>function nextAttack(){</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const elapsed=(Date.now()-startTime)/1000;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>if(elapsed&gt;=20){</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>attackText.innerText=(char1.health&gt;char2.health?char1.name:(char2.health&gt;char1.health?char2.name:'DRAW'))+' WINS! 🏆';</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>const attacker=turn%2===0?char1:char2;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const defender=turn%2===0?char2:char1;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const attackerElem=turn%2===0?fighter1:fighter2;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const defenderElem=turn%2===0?fighter2:fighter1;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>let damage=attacker.attack+Math.floor(Math.random()*10-5);</p>
+<p class="p1"><span class="Apple-converted-space">                </span>let projSize=20;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>let color=attacker.power.color;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>let ultimate=false;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>if((attacker===char1&amp;&amp;!ultimateUsed1&amp;&amp;attacker.health&lt;=30)||(attacker===char2&amp;&amp;!ultimateUsed2&amp;&amp;attacker.health&lt;=30)){</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>damage+=attacker.ultimate.damage; projSize=50; color=attacker.ultimate.color; ultimate=true;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>attackText.innerText=attacker.name+' unleashes '+attacker.ultimate.name+'! 💥';</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>if(attacker===char1) ultimateUsed1=true; else ultimateUsed2=true;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>} else {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>attackText.innerText=attacker.name+' uses '+attacker.power.name+'! '+defender.name+' loses '+damage+' HP';</p>
+<p class="p1"><span class="Apple-converted-space">                </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>defender.health-=damage; defender.health=Math.max(defender.health,0);</p>
+<p class="p1"><span class="Apple-converted-space">                </span>shootProjectile(attackerElem,defenderElem,color,()=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>updateHP(char1,char2); turn++;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>setTimeout(nextAttack,600);</p>
+<p class="p1"><span class="Apple-converted-space">                </span>},projSize,ultimate);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>nextAttack();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
