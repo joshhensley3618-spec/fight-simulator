@@ -1,1 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auto Fight Clip</title>
+    <style>
+        body { font-family: Arial; text-align: center; background: #111; color: #fff; overflow: hidden; }
+        #arena { position: relative; width: 800px; height: 400px; margin: 50px auto; background: #222; border: 2px solid #fff; transition: transform 0.05s; }
+        .fighter { position: absolute; width: 80px; height: 80px; bottom: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; font-size: 20px; text-shadow: 0 0 5px #000; }
+        .hp-bar { width: 100px; height: 15px; background: #555; margin: 10px auto; border-radius: 5px; overflow: hidden; }
+        .hp-fill { height: 100%; background: #0f0; width: 100%; transition: width 0.5s; }
+        #attackText { margin-top: 20px; height: 40px; font-weight: bold; font-size: 18px; }
+        .projectile { position: absolute; width: 20px; height: 20px; border-radius: 50%; background: orange; }
+        .ultimate { position: absolute; width: 50px; height: 50px; border-radius: 50%; background: gold; box-shadow: 0 0 30px 10px gold; }
+        .explosion { position: absolute; width: 60px; height: 60px; border-radius: 50%; background: radial-gradient(circle, yellow 0%, red 70%); opacity: 0.8; animation: explode 0.5s forwards; }
+        @keyframes explode { 0% { transform: scale(0); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
+        #intro { font-size: 32px; font-weight: bold; margin-top: 100px; }
+    </style>
+</head>
+<body>
+    <div id="intro"></div>
+    <div class="hp-bar"><div class="hp-fill" id="hp1"></div></div>
+    <div class="hp-bar"><div class="hp-fill" id="hp2"></div></div>
+    <div id="arena">
+        <div class="fighter" id="fighter1"></div>
+        <div class="fighter" id="fighter2"></div>
+    </div>
+    <div id="attackText"></div>
 
+    <script>
+        const arena=document.getElementById('arena');
+        const attackText=document.getElementById('attackText');
+        const fighter1=document.getElementById('fighter1');
+        const fighter2=document.getElementById('fighter2');
+        const intro=document.getElementById('intro');
+
+        function usernameColor(name){
+            let hash=0; for(let i=0;i<name.length;i++){hash=name.charCodeAt(i)+((hash<<5)-hash);}
+            return `hsl(${hash%360},70%,50%)`;
+        }
+
+        function generateCharacter(username){
+            const powers=[
+                {name:'🔥 Fire Blast',color:'orange'},
+                {name:'⚡ Lightning Strike',color:'yellow'},
+                {name:'❄️ Ice Shard',color:'cyan'},
+                {name:'🌑 Shadow Slash',color:'purple'},
+                {name:'🌍 Earthquake',color:'brown'}
+            ];
+            const power=powers[Math.floor(Math.random()*powers.length)];
+            return {
+                name:username,
+                health:100,
+                attack:Math.floor(Math.random()*15)+10,
+                power:power,
+                ultimate:{name:'ULTIMATE '+power.name,color:'gold',damage:40},
+                color:usernameColor(username)
+            };
+        }
+
+        function updateHP(char1,char2){
+            document.getElementById('hp1').style.width=char1.health+'%';
+            document.getElementById('hp2').style.width=char2.health+'%';
+        }
+
+        function shootProjectile(attackerElem,defenderElem,color,callback,size=20,ultimate=false){
+            const proj=document.createElement('div');
+            proj.className=ultimate?'ultimate':'projectile';
+            proj.style.background=color;
+            proj.style.width=size+'px';
+            proj.style.height=size+'px';
+            const attackerPos=attackerElem.offsetLeft+40;
+            const defenderPos=defenderElem.offsetLeft+40;
+            proj.style.left=attackerPos+'px';
+            proj.style.bottom='90px';
+            arena.appendChild(proj);
+            let pos=attackerPos;
+            const step=attackerElem.offsetLeft<defenderElem.offsetLeft?15:-15;
+            const interval=setInterval(()=>{
+                pos+=step;
+                proj.style.left=pos+'px';
+                if((step>0 && pos>=defenderPos)||(step<0 && pos<=defenderPos)){
+                    clearInterval(interval);
+                    arena.removeChild(proj);
+                    if(ultimate) triggerExplosion(defenderElem);
+                    callback();
+                }
+            },30);
+        }
+
+        function triggerExplosion(targetElem){
+            const exp=document.createElement('div');
+            exp.className='explosion';
+            exp.style.left=(targetElem.offsetLeft+20)+'px';
+            exp.style.bottom=(targetElem.offsetTop+20)+'px';
+            arena.appendChild(exp);
+            let shakeCount=0;
+            const shakeInterval=setInterval(()=>{
+                const offset=(shakeCount%2===0?10:-10);
+                arena.style.transform=`translate(${offset}px,0)`;
+                shakeCount++;
+                if(shakeCount>5){clearInterval(shakeInterval);arena.style.transform='translate(0,0)';}
+            },50);
+            setTimeout(()=>{arena.removeChild(exp);},500);
+        }
+
+        // AUTO-GENERATED FIGHT
+        const names=["ShadowX","BlazeKing","IceQueen","ThunderBolt","DarkLord","FireWolf"];
+        const char1=generateCharacter(names[Math.floor(Math.random()*names.length)]);
+        const char2=generateCharacter(names[Math.floor(Math.random()*names.length)]);
+        let ultimateUsed1=false, ultimateUsed2=false;
+
+        fighter1.style.left='50px';
+        fighter2.style.left='670px';
+        fighter1.style.backgroundColor=char1.color; fighter1.innerText=char1.name[0];
+        fighter2.style.backgroundColor=char2.color; fighter2.innerText=char2.name[0];
+
+        char1.health=100; char2.health=100;
+        updateHP(char1,char2);
+
+        // Display intro usernames for 3 seconds
+        intro.innerHTML=`${char1.name} VS ${char2.name}`;
+        setTimeout(()=>{intro.innerText=''; startFight();},3000);
+
+        function startFight(){
+            const startTime=Date.now();
+            let turn=0;
+
+            function nextAttack(){
+                const elapsed=(Date.now()-startTime)/1000;
+                if(elapsed>=20){
+                    attackText.innerText=(char1.health>char2.health?char1.name:(char2.health>char1.health?char2.name:'DRAW'))+' WINS! 🏆';
+                    return;
+                }
+
+                const attacker=turn%2===0?char1:char2;
+                const defender=turn%2===0?char2:char1;
+                const attackerElem=turn%2===0?fighter1:fighter2;
+                const defenderElem=turn%2===0?fighter2:fighter1;
+
+                let damage=attacker.attack+Math.floor(Math.random()*10-5);
+                let projSize=20;
+                let color=attacker.power.color;
+                let ultimate=false;
+
+                if((attacker===char1&&!ultimateUsed1&&attacker.health<=30)||(attacker===char2&&!ultimateUsed2&&attacker.health<=30)){
+                    damage+=attacker.ultimate.damage; projSize=50; color=attacker.ultimate.color; ultimate=true;
+                    attackText.innerText=attacker.name+' unleashes '+attacker.ultimate.name+'! 💥';
+                    if(attacker===char1) ultimateUsed1=true; else ultimateUsed2=true;
+                } else {
+                    attackText.innerText=attacker.name+' uses '+attacker.power.name+'! '+defender.name+' loses '+damage+' HP';
+                }
+
+                defender.health-=damage; defender.health=Math.max(defender.health,0);
+                shootProjectile(attackerElem,defenderElem,color,()=>{
+                    updateHP(char1,char2); turn++;
+                    setTimeout(nextAttack,600);
+                },projSize,ultimate);
+            }
+
+            nextAttack();
+        }
+    </script>
+</body>
+</html>
