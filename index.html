@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Anime Fight Simulator</title>
+<style>
+  canvas {
+    background: #111;
+    display: block;
+    margin: 0 auto;
+  }
+  body { text-align: center; color: #fff; font-family: sans-serif; }
+</style>
+</head>
+<body>
+<h2>Anime Fight Simulator</h2>
+<canvas id="gameCanvas" width="800" height="400"></canvas>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const totalFightTime = 20000;
+const backAndForthTime = 15000;
+let startTime = Date.now();
+let fightOver = false;
+
+function randomColor() {
+    const colors = ['red', 'blue', 'green', 'orange', 'purple', 'yellow'];
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+function randomAction() {
+    const actions = ['idle', 'punch', 'kick', 'special'];
+    return actions[Math.floor(Math.random() * actions.length)];
+}
+
+function createAnimeSprite(color, frames = 6) {
+    const width = 80;
+    const height = 120;
+    const canvasSprite = document.createElement('canvas');
+    canvasSprite.width = width * frames;
+    canvasSprite.height = height;
+    const ctxSprite = canvasSprite.getContext('2d');
+    for (let i = 0; i < frames; i++) {
+        ctxSprite.fillStyle = color;
+        ctxSprite.fillRect(i * width, 0, width, height);
+        ctxSprite.fillStyle = '#fff';
+        ctxSprite.font = '20px sans-serif';
+        ctxSprite.fillText(i+1, i * width + width/2 - 10, height/2);
+    }
+    return { img: canvasSprite, frames, width, height };
+}
+
+class Fighter {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = 80;
+        this.height = 120;
+        this.color = randomColor();
+
+        this.sprites = {
+            idle: createAnimeSprite(this.color, 6),
+            punch: createAnimeSprite(this.color, 6),
+            kick: createAnimeSprite(this.color, 6),
+            special: createAnimeSprite(this.color, 8)
+        };
+
+        this.currentAction = 'idle';
+        this.frameIndex = 0;
+        this.frameTick = 0;
+        this.frameSpeed = 5;
+
+        this.actionDuration = 30;
+        this.actionTick = 0;
+    }
+
+    update(isFinalAttack = false) {
+        this.frameTick++;
+        if (this.frameTick >= this.frameSpeed) {
+            this.frameIndex = (this.frameIndex + 1) % this.sprites[this.currentAction].frames;
+            this.frameTick = 0;
+        }
+
+        this.actionTick++;
+        if (this.actionTick >= this.actionDuration) {
+            if (!isFinalAttack) {
+                this.currentAction = randomAction();
+            } else {
+                this.currentAction = 'special';
+            }
+            this.frameIndex = 0;
+            this.actionTick = 0;
+        }
+    }
+
+    draw() {
+        const sprite = this.sprites[this.currentAction];
+        ctx.drawImage(
+            sprite.img,
+            this.frameIndex * sprite.width,
+            0,
+            sprite.width,
+            sprite.height,
+            this.x,
+            this.y,
+            this.width,
+            this.height
+        );
+    }
+}
+
+const fighter1 = new Fighter(200, 250);
+const fighter2 = new Fighter(500, 250);
+const finalWinner = Math.random() < 0.5 ? fighter1 : fighter2;
+
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const elapsed = Date.now() - startTime;
+
+    if (elapsed < backAndForthTime) {
+        fighter1.update();
+        fighter2.update();
+    } else if (elapsed < totalFightTime) {
+        fighter1.update(fighter1 !== finalWinner);
+        fighter2.update(fighter2 !== finalWinner);
+    } else {
+        fightOver = true;
+    }
+
+    fighter1.draw();
+    fighter2.draw();
+
+    if (!fightOver) {
+        requestAnimationFrame(gameLoop);
+    } else {
+        ctx.fillStyle = '#fff';
+        ctx.font = '30px sans-serif';
+        ctx.fillText('Fight Over!', canvas.width / 2 - 80, 50);
+        ctx.fillText('Winner: ' + (finalWinner === fighter1 ? 'Fighter 1' : 'Fighter 2'), canvas.width / 2 - 80, 100);
+    }
+}
+
+gameLoop();
+</script>
+</body>
+</html>
